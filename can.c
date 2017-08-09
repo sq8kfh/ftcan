@@ -90,7 +90,7 @@ CAN_tx(can_buf_t *buf)
 
    CANPAGE = 0 << MOBNB0;      // Select MOb0 for transmission
    
-   while ( CANEN2 & ( 1 << ENMOB1 ) ); // Wait for MOb 0 to be free
+   while ( CANEN2 & ( 1 << ENMOB0 ) ); // Wait for MOb 0 to be free
    
    CANSTMOB = 0x00;       // Clear mob status register
    
@@ -107,5 +107,3 @@ CAN_tx(can_buf_t *buf)
     
    CANCDMOB = buf->cancdmob | ( 1 << CONMOB0 );    // Enable transmission         
 }
-
-
