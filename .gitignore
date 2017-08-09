@@ -1,0 +1,7 @@
+[Dd]ebug/
+[Rr]elease/
+.vs/
+
+*.componentinfo.xml
+
+.DS_Store
