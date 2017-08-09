@@ -2,7 +2,7 @@
  * ft220x.c
  *
  * Created: 2014-08-14 09:35:20
- *  Author: cr
+ * Author: SQ8KFH
  */ 
 
 #include "ft220x.h"
@@ -17,7 +17,8 @@
 #define FT_MIOSI0_0 PORT_FT &= ~(1<<MIOSI0_FT)
 #define FT_MIOSI0_1 PORT_FT |= (1<<MIOSI0_FT)
 
-uint8_t spi_write(uint8_t value)
+uint8_t
+spi_write(uint8_t value)
 {
 	uint8_t bit_ctr;
 	for (bit_ctr=0; bit_ctr<8; ++bit_ctr) {  // output 8-bit
@@ -37,7 +38,8 @@ uint8_t spi_write(uint8_t value)
 	return value;
 }
 
-uint8_t spi_read(uint8_t *value)
+uint8_t
+spi_read(uint8_t *value)
 {
 	uint8_t bit_ctr;
 	uint8_t err = 0; // error from MISO
@@ -55,13 +57,15 @@ uint8_t spi_read(uint8_t *value)
 	return err;
 }
 
-void FT220X_init(void)
+void
+FT220X_init(void)
 {
 	DDR_FT = (1<<SS_FT) | (1<<CLK_FT) | (1<<MIOSI0_FT) | (1<<MIOSI1_FT) | (1<<MIOSI2_FT) | (1<<MIOSI3_FT);
 	PORT_FT = (1<<MISO_FT) | (1<<MIOSI0_FT) | (1<<MIOSI1_FT) | (1<<MIOSI2_FT) | (1<<MIOSI3_FT);
 }
 
-uint8_t FT220X_read(uint8_t *buf, uint8_t len)
+uint8_t
+FT220X_read(uint8_t *buf, uint8_t len)
 {
 	uint8_t i = 0;
 	uint8_t err = 0;
@@ -83,7 +87,8 @@ uint8_t FT220X_read(uint8_t *buf, uint8_t len)
 	return i;
 }
 
-uint8_t FT220X_read_line(char *buf, uint8_t len)
+uint8_t
+FT220X_read_line(char *buf, uint8_t len)
 {
 	uint8_t i = 0;
 	uint8_t err = 0;
@@ -109,7 +114,8 @@ uint8_t FT220X_read_line(char *buf, uint8_t len)
 	return i;
 }
 
-void FT220X_write(uint8_t data)
+void
+FT220X_write(uint8_t data)
 {
 	DDR_FT |= (1<<MIOSI0_FT);	//MIOSIO as output
 	//PORT_FT |= (1<<MIOSI0_FT);
@@ -121,7 +127,8 @@ void FT220X_write(uint8_t data)
 	sei();
 }
 
-void FT220X_write_s(char *data)
+void
+FT220X_write_s(char *data)
 {
 	DDR_FT |= (1<<MIOSI0_FT);	// MIOSIO as output
 	//PORT_FT |= (1<<MIOSI0_FT);

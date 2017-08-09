@@ -2,7 +2,7 @@
  * ft220x.h
  *
  * Created: 2014-08-14 09:35:38
- *  Author: cr
+ * Author: SQ8KFH
  */ 
 
 

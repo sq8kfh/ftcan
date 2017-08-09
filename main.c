@@ -1,11 +1,10 @@
 /*
- * GccApplication1.c
+ * main.c
  *
  * Created: 2014-08-09 12:36:33
- *  Author: cr
+ * Author: SQ8KFH
  */ 
 
-#define F_CPU 4000000UL  // 1 MHz
 #include <avr/io.h>
 #include <util/delay.h>
 #include <avr/interrupt.h>
@@ -260,12 +259,12 @@ void slcan_interpreter(char *command)
 	else if (command[0] == 'V') {	//HW/SW Version
 		if (command[1] != '\r')
 			goto error;
-		FT220X_write_s("V0101\r");
+		FT220X_write_s("V0102\r");
 	}
 	else if (command[0] == 'v') {	//Major/Minor Version
 		if (command[1] != '\r')
 			goto error;
-		FT220X_write_s("v0101\r");
+		FT220X_write_s("v0102\r");
 	}
 	else {
 		goto error;

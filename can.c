@@ -2,7 +2,7 @@
  * can.c
  *
  * Created: 2014-08-15 16:28:36
- *  Author: cr
+ * Author: SQ8KFH
  */ 
 
 #include "can.h"
@@ -28,7 +28,7 @@ ISR(CAN_INT_vect)
 				can_rx_buf[can_rx_buf_top].data[i] = CANMSG;
 			}
 			can_rx_buf_top = (uint8_t)((can_rx_buf_top + 1) & CAN_RX_BUF_INDEX_MASK);
-			//uart_putc('R');
+
 			CANIDM1 = 0;
 			CANIDM2 = 0;
 			CANIDM3 = 0;
@@ -36,8 +36,6 @@ ISR(CAN_INT_vect)
 			CANCDMOB = (1<<CONMOB1); //rx mob
 		}
 		else if (CANSTMOB & (1 << TXOK)) {
-			//uart_putc('W');
-
 			CANCDMOB = 0; //disable mob
 		}
 		CANSTMOB = 0x00;  // Reset reason on selected channel
@@ -47,7 +45,8 @@ ISR(CAN_INT_vect)
 	CANGIT |= (cangit & 0x7f);
 }
 
-void CAN_init(void)
+void
+CAN_init(void)
 {
 	CANGCON = ( 1 << SWRES );   // CAN reset
 	CANTCON = 0xff;             // CAN timing prescaler
@@ -62,6 +61,8 @@ void CAN_init(void)
 		CANBT1 = 0x1e;
 		CANBT2 = 0x04;
 		CANBT3 = 0x13;
+	#else
+		#error "Please specify F_CPU"
 	#endif
 	
 	for ( uint8_t mob=0; mob<6; mob++ ) { 
@@ -83,7 +84,8 @@ void CAN_init(void)
 	CANGCON = 1<<ENASTB;
 }
 
-void CAN_tx(can_buf_t *buf)
+void
+CAN_tx(can_buf_t *buf)
 {
 
    CANPAGE = 0 << MOBNB0;      // Select MOb0 for transmission
@@ -104,12 +106,6 @@ void CAN_tx(can_buf_t *buf)
    } // for
     
    CANCDMOB = buf->cancdmob | ( 1 << CONMOB0 );    // Enable transmission         
-
-  // while ( ! ( CANSTMOB & ( 1 << TXOK ) ) );   // wait for TXOK flag set
-// //todo: have this use interrupts
-   //CANCDMOB = 0x00;   // Disable Transmission
-
-  // CANSTMOB = 0x00;   // Clear TXOK flag
-
 }
+
 

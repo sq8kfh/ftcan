@@ -2,7 +2,7 @@
  * can.h
  *
  * Created: 2014-08-15 16:28:22
- *  Author: cr
+ * Author: SQ8KFH
  */ 
 
 
