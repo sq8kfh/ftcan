@@ -284,7 +284,7 @@ int main(void)
 	CAN_init();
 	sei();
 	
-	FT220X_write_s("USB <-> CAN Bus\rcompatible with slcan by SQ8KFH\r");
+	//FT220X_write_s("USB <-> CAN Bus\rcompatible with slcan by SQ8KFH\r");
 	
 	uint8_t read_idx = 0;
 	uint8_t led = 0;
