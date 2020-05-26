@@ -3,7 +3,7 @@
  *
  * Created: 2014-08-14 09:35:20
  * Author: SQ8KFH
- */ 
+ */
 
 #include "ft220x.h"
 #include <avr/interrupt.h>
@@ -14,129 +14,123 @@
 #define FT_CLK_0 PORT_FT &= ~(1<<CLK_FT)
 #define FT_CLK_1 PORT_FT |= (1<<CLK_FT)
 
-#define FT_MIOSI0_0 PORT_FT &= ~(1<<MIOSI0_FT)
-#define FT_MIOSI0_1 PORT_FT |= (1<<MIOSI0_FT)
+const uint8_t nibble_swap[16] = {0x0, 0x8, 0x4, 0xC, 0x2, 0xA, 0x6, 0xE, 0x1, 0x9, 0x5, 0xD, 0x3, 0xB, 0x7, 0xF};
 
-uint8_t
-spi_write(uint8_t value)
-{
-	uint8_t bit_ctr;
-	for (bit_ctr=0; bit_ctr<8; ++bit_ctr) {  // output 8-bit
-		if (value & (uint8_t)0x80)
-		FT_MIOSI0_1;
-		else
-		FT_MIOSI0_0;
-
-		value = (value << 1);   // shift next bit into MSB..
-		asm (" nop"); asm (" nop"); asm (" nop"); asm (" nop"); asm (" nop"); asm (" nop");
-		FT_CLK_1;          // Set SCK high..
-		asm (" nop"); asm (" nop"); asm (" nop"); asm (" nop"); asm (" nop"); asm (" nop");
-		value |= (PIN_FT & (1<<MISO_FT)) >> MISO_FT;          // capture current MISO bit
-		asm (" nop"); asm (" nop"); asm (" nop"); asm (" nop"); asm (" nop"); asm (" nop");
-		FT_CLK_0;                // ..then set SCK low again
-	}
-	return value;
+uint8_t spi_write(uint8_t value) {
+    PORT_FT = (PORT_FT & ~(0x0f << MIOSI0_FT)) | (nibble_swap[(value >> 4) & 0x0f] << MIOSI0_FT);
+    asm ("nop");
+    //asm ("nop");
+    FT_CLK_1;
+    asm ("nop");
+    uint8_t ack = (PIN_FT & (1<<MISO_FT)) >> MISO_FT;
+    FT_CLK_0;
+    PORT_FT = (PORT_FT & ~(0x0f << MIOSI0_FT)) | (nibble_swap[(value) & 0x0f] << MIOSI0_FT);
+    asm ("nop");
+    //asm ("nop");
+    FT_CLK_1;
+    asm ("nop");
+    FT_CLK_0;
+    return ack;
 }
 
-uint8_t
-spi_read(uint8_t *value)
-{
-	uint8_t bit_ctr;
-	uint8_t err = 0; // error from MISO
-	for (bit_ctr=0; bit_ctr<8; ++bit_ctr) {  // output 8-bit
-		*value = (*value << 1);  // shift next bit into MSB..
-		err = (err << 1);
-		asm (" nop"); asm (" nop"); asm (" nop"); asm (" nop"); asm (" nop"); asm (" nop");
-		FT_CLK_1;          // Set SCK high..
-		asm (" nop"); asm (" nop"); asm (" nop"); asm (" nop"); asm (" nop"); asm (" nop");
-		*value |= (PIN_FT & (1<<MIOSI0_FT)) >> MIOSI0_FT;      // capture current MIOSIO bit
-		err |= (PIN_FT & (1<<MISO_FT)) >> MISO_FT;            // capture current error bit on MISO
-		asm (" nop"); asm (" nop"); asm (" nop"); asm (" nop"); asm (" nop"); asm (" nop");
-		FT_CLK_0;                // ..then set SCK low again
-	}
-	return err;
+uint8_t spi_read(uint8_t *value) {
+    FT_CLK_1;
+    asm ("nop");
+    *value = nibble_swap[(PIN_FT >> MIOSI0_FT) & 0x0f] << 4u;
+    uint8_t ack = (PIN_FT & (1<<MISO_FT)) >> MISO_FT;
+    ack <<= 1u;
+    FT_CLK_0;
+    asm ("nop");
+    FT_CLK_1;
+    asm ("nop");
+    *value |= nibble_swap[(PIN_FT >> MIOSI0_FT) & 0x0f];
+    ack |= (PIN_FT & (1<<MISO_FT)) >> MISO_FT;
+    FT_CLK_0;
+
+    return ack;
 }
 
-void
-FT220X_init(void)
-{
-	DDR_FT = (1<<SS_FT) | (1<<CLK_FT) | (1<<MIOSI0_FT) | (1<<MIOSI1_FT) | (1<<MIOSI2_FT) | (1<<MIOSI3_FT);
-	PORT_FT = (1<<MISO_FT) | (1<<MIOSI0_FT) | (1<<MIOSI1_FT) | (1<<MIOSI2_FT) | (1<<MIOSI3_FT);
+void FT220X_init(void) {
+    DDR_FT = (1<<SS_FT) | (1<<CLK_FT) | (1<<MIOSI0_FT) | (1<<MIOSI1_FT) | (1<<MIOSI2_FT) | (1<<MIOSI3_FT);
+    PORT_FT = (1<<MISO_FT) | (1<<MIOSI0_FT) | (1<<MIOSI1_FT) | (1<<MIOSI2_FT) | (1<<MIOSI3_FT);
 }
 
-uint8_t
-FT220X_read(uint8_t *buf, uint8_t len)
-{
-	uint8_t i = 0;
-	uint8_t err = 0;
-	DDR_FT |= (1<<MIOSI0_FT); // MIOSIO as output
-	cli();
-	FT_SS_EN;
-	err = spi_write(READ_REQ);
-	if ((err & 0xFF) == 0xFE) { // check for data in fifo
-		DDR_FT &= ~(1<<MIOSI0_FT); // MIOSIO as input
-		PORT_FT |= (1<<MIOSI0_FT); //pull up
-		for (i = 0; i < len; i++) {
-			err = spi_read(&buf[i]);
-			if ((err & 0xFF) == 0xFF) // break if no more data in fifo
-			break;
-		}
-	}
-	FT_SS_DIS;
-	sei();
-	return i;
+void FT220X_flush(void) {
+    DDR_FT |= (1<<MIOSI0_FT) | (1<<MIOSI1_FT) | (1<<MIOSI2_FT) | (1<<MIOSI3_FT);	//MIOSIO as output
+    cli();
+    FT_SS_EN;
+    asm ("nop");
+    spi_write(FLUSH_REQ);
+    asm ("nop");
+    FT_CLK_1;
+    asm ("nop");
+    FT_CLK_0;
+    FT_SS_DIS;
+    sei();
 }
 
-uint8_t
-FT220X_read_line(char *buf, uint8_t len)
-{
-	uint8_t i = 0;
-	uint8_t err = 0;
-	DDR_FT |= (1<<MIOSI0_FT); // MIOSIO as output
-	cli();
-	FT_SS_EN;
-	err = spi_write(READ_REQ);
-	if ((err & 0xFF) == 0xFE) { // check for data in fifo
-		DDR_FT &= ~(1<<MIOSI0_FT); // MIOSIO as input
-		PORT_FT |= (1<<MIOSI0_FT); //pull up
-		for (i = 0; i < len; i++) {
-			err = spi_read((uint8_t*)&buf[i]);
-			if ((err & 0xFF) == 0xFF) // break if no more data in fifo
-			break;
-			if (buf[i] == '\r') {
-				++i;
-				break;
-			}
-		}
-	}
-	FT_SS_DIS;
-	sei();
-	return i;
+uint8_t FT220X_read_line(char *buf, uint8_t len) {
+    uint8_t i = 0;
+    DDR_FT |= (1<<MIOSI0_FT) | (1<<MIOSI1_FT) | (1<<MIOSI2_FT) | (1<<MIOSI3_FT); // MIOSIO as output
+    cli();
+    //PORTC |= (1<<PC0);
+    FT_SS_EN;
+    asm ("nop");
+    spi_write(READ_REQ);
+    asm ("nop");
+    FT_CLK_1;
+    asm ("nop");
+    uint8_t rxf = (PIN_FT & (1<<MISO_FT)) >> MISO_FT;
+    FT_CLK_0;
+    if (rxf == 0) { // check for data in fifo
+        PORT_FT |= (1<<MIOSI0_FT) | (1<<MIOSI1_FT) | (1<<MIOSI2_FT) | (1<<MIOSI3_FT); //pull up
+        DDR_FT &= ~((1<<MIOSI0_FT) | (1<<MIOSI1_FT) | (1<<MIOSI2_FT) | (1<<MIOSI3_FT)); // MIOSIO as input
+        asm ("nop");
+        for (i = 0; i < len; i++) {
+            uint8_t ack = spi_read((uint8_t*)&buf[i]);
+            if (ack == 0) // break if no more data in fifo
+            break;
+            if (buf[i] == '\r') {
+                ++i;
+                break;
+            }
+        }
+    }
+    FT_SS_DIS;
+    //PORTC &= ~(1<<PC0);
+    sei();
+    return i;
 }
 
-void
-FT220X_write(uint8_t data)
-{
-	DDR_FT |= (1<<MIOSI0_FT);	//MIOSIO as output
-	//PORT_FT |= (1<<MIOSI0_FT);
-	cli();
-	FT_SS_EN;
-	spi_write(WRITE_REQ);
-	spi_write(data);
-	FT_SS_DIS;
-	sei();
+void FT220X_write(uint8_t data) {
+    DDR_FT |= (1<<MIOSI0_FT) | (1<<MIOSI1_FT) | (1<<MIOSI2_FT) | (1<<MIOSI3_FT);	//MIOSIO as output
+    cli();
+    FT_SS_EN;
+    asm ("nop");
+    spi_write(WRITE_REQ);
+    asm ("nop");
+    FT_CLK_1;
+    asm ("nop");
+    //uint8_t txe = (PIN_FT & (1<<MISO_FT)) >> MISO_FT;
+    FT_CLK_0;
+    spi_write(data);
+    FT_SS_DIS;
+    sei();
 }
 
-void
-FT220X_write_s(char *data)
-{
-	DDR_FT |= (1<<MIOSI0_FT);	// MIOSIO as output
-	//PORT_FT |= (1<<MIOSI0_FT);
-	cli();
-	FT_SS_EN;
-	spi_write(WRITE_REQ);
-	for (;*data != 0; ++data)
-	spi_write((uint8_t)(*data));
-	FT_SS_DIS;
-	sei();
+void FT220X_write_s(char *data) {
+    DDR_FT |= (1<<MIOSI0_FT) | (1<<MIOSI1_FT) | (1<<MIOSI2_FT) | (1<<MIOSI3_FT);	//MIOSIO as output
+    cli();
+    FT_SS_EN;
+    asm ("nop");
+    spi_write(WRITE_REQ);
+    asm ("nop");
+    FT_CLK_1;
+    asm ("nop");
+    //uint8_t txe = (PIN_FT & (1<<MISO_FT)) >> MISO_FT;
+    FT_CLK_0;
+    for (;*data != 0; ++data)
+        spi_write((uint8_t)(*data));
+    FT_SS_DIS;
+    sei();
 }

@@ -3,8 +3,7 @@
  *
  * Created: 2014-08-14 09:35:38
  * Author: SQ8KFH
- */ 
-
+ */
 
 #ifndef FT220X_H_
 #define FT220X_H_
@@ -23,11 +22,12 @@
 #define SS_FT PB6
 #define CLK_FT PB7
 
-#define READ_REQ 0x02
-#define WRITE_REQ 0x00
+#define FLUSH_REQ 0x11
+#define READ_REQ 0x03
+#define WRITE_REQ 0x01
 
 void FT220X_init(void);
-uint8_t FT220X_read(uint8_t *buf, uint8_t len);
+void FT220X_flush(void);
 uint8_t FT220X_read_line(char *buf, uint8_t len);
 void FT220X_write(uint8_t data);
 void FT220X_write_s(char *data);

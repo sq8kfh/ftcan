@@ -4,13 +4,9 @@ project(rscan)
 
 set(PROGRAMMER jtag3isp)
 set(MMCU atmega32m1)
-set(FREQ 4000000)
+set(FREQ 8000000)
 
 set(SOURCE_FILES main.c ft220x.c ft220x.h can.c can.h)
-
-if(BOOTSTART)
-    add_subdirectory(can)
-endif(BOOTSTART)
 
 set(CMAKE_SYSTEM_NAME Generic)
 
@@ -66,18 +62,12 @@ set(ELF_FILENAME ${PROJECT_NAME}.elf)
 set(ELF_FILE "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${ELF_FILENAME}")
 set(HEX_FILE "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PROJECT_NAME}.hex")
 set(EEP_FILE "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PROJECT_NAME}.eep")
-set(HEX_WITH_BL_FILE "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PROJECT_NAME}_with_bl.hex")
 
 add_additional_clean_file(${ELF_FILE})
 add_additional_clean_file(${HEX_FILE})
 add_additional_clean_file(${EEP_FILE})
 
-if(BOOTSTART)
-    set(BOOTSTART_FLAG "-DBOOTSTART=${BOOTSTART}")
-    add_dependencies(${PROJECT_NAME} h9-bootloader)
-    set(HEX_WITH_BL_FILE "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PROJECT_NAME}_with_bl.hex")
-    add_additional_clean_file(${HEX_WITH_BL_FILE})
-endif(BOOTSTART)
+#-save-temps -Wa,-adhlmn=main.lst
 
 set_target_properties(
         ${PROJECT_NAME}
@@ -97,24 +87,10 @@ add_custom_command(
 )
 
 add_custom_target("flash"
-        ${AVRDUDE} -p ${MMCU} -c ${PROGRAMMER} -U ${HEX_FILE}
+        ${AVRDUDE} -p ${MMCU} -c ${PROGRAMMER} -U flash:w:${HEX_FILE}
         DEPENDS ${PROJECT_NAME}
         COMMENT "Flash uploading"
 )
-
-if(BOOTSTART)
-    add_custom_target(${PROJECT_NAME}_with_bl
-            COMMAND ${SREC_CAT} ${HEX_FILE} -I can/build/h9-bootloader.hex -I -o ${HEX_WITH_BL_FILE} -I
-            DEPENDS ${PROJECT_NAME} h9-bootloader
-            COMMENT "Flashs combinating"
-            )
-
-    add_custom_target("flashall"
-            ${AVRDUDE} -p ${MMCU} -c ${PROGRAMMER} -U ${HEX_WITH_BL_FILE}
-            DEPENDS ${PROJECT_NAME}_with_bl
-            COMMENT "Full flash uploading"
-            )
-endif(BOOTSTART)
 
 add_custom_target("eeprom"
         ${AVRDUDE} -p ${MMCU} -c ${PROGRAMMER} -U eeprom:w:${EEP_FILE}
