@@ -1,8 +1,9 @@
 /*
  * ft220x.c
  *
- * Created: 2014-08-14 09:35:20
- * Author: SQ8KFH
+ * Created by SQ8KFH on 2014-08-14.
+ *
+ * Copyright (C) 2014-2020 Kamil Palkowski. All rights reserved.
  */
 
 #include "ft220x.h"

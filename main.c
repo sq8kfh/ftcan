@@ -1,8 +1,9 @@
 /*
  * main.c
  *
- * Created: 2014-08-09 12:36:33
- * Author: SQ8KFH
+ * Created by SQ8KFH on 2014-08-09.
+ *
+ * Copyright (C) 2014-2020 Kamil Palkowski. All rights reserved.
  */
 
 #include <avr/io.h>

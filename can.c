@@ -1,8 +1,9 @@
 /*
  * can.c
  *
- * Created: 2014-08-15 16:28:36
- * Author: SQ8KFH
+ * Created by SQ8KFH on 2014-08-15.
+ *
+ * Copyright (C) 2014-2020 Kamil Palkowski. All rights reserved.
  */
 
 #include "can.h"
@@ -106,7 +107,7 @@ void CAN_tx(can_buf_t *buf) {
    CANIDT3 = buf->canidt3;      // ""
    CANIDT2 = buf->canidt2;      // ""
    CANIDT1 = buf->canidt1;      // ""
-   
+
    for ( int8_t i = 0; i < 8; ++i ) {
         CANMSG = buf->data[i];  // set message data for all 8 bytes to 55 (alternating 1s and 0s
    } // for

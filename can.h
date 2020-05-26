@@ -1,8 +1,9 @@
 /*
  * can.h
  *
- * Created: 2014-08-15 16:28:22
- * Author: SQ8KFH
+ * Created by SQ8KFH on 2014-08-15.
+ *
+ * Copyright (C) 2014-2020 Kamil Palkowski. All rights reserved.
  */
 
 #ifndef CAN_H_
