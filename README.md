@@ -25,3 +25,11 @@ The FTCAN is compatible with the SLCAN (Serial Line CAN Protocol).
 |  V  |        | v[CR]               | Get hardware/software version number               |
 |  v  |        | V[CR]               | Get software major and minor version number        |
 |  N  |  TODO  | N[CR]               | Get serial number of the FT220X                    |
+
+## FTCAN hardware
+
+### Schema
+![schema ftcan](doc/ftcan_v1.png)
+
+### Hardware
+![hardware ftcan](doc/ftcan_v1.jpg)
