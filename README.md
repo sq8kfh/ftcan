@@ -1,10 +1,10 @@
-#FTCAN
+# FTCAN
 
-##Overview
+## Overview
 The FTCAN is a firmware for USB to CAN adapter base on the FTDI FT220X and the Atmel ATmega32M1.
 The FTCAN is compatible with the SLCAN (Serial Line CAN Protocol).
 
-##Supported command
+## Supported command
 
 | CMD | STATUS | SYNTAX              | DESCRIPTION                                        |
 |:---:|:------:|---------------------|----------------------------------------------------|
