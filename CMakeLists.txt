@@ -1,16 +1,20 @@
-cmake_minimum_required(VERSION 2.8.4)
+cmake_minimum_required(VERSION 3.7)
 
-project(rscan)
+project(ftcan VERSION 0.0.0)
 
 set(PROGRAMMER jtag3isp)
 set(MMCU atmega32m1)
-set(FREQ 8000000)
+set(F_CPU 8000000)
 
 set(SOURCE_FILES main.c ft220x.c ft220x.h can.c can.h)
 
 set(CMAKE_SYSTEM_NAME Generic)
 
 set(PATHS "/usr/local/bin/ /opt/local/bin/")
+
+set(FTCAN_VERSION_MAJOR Y)
+set(FTCAN_VERSION_MINOR Y)
+configure_file(config.h.in config.h)
 
 function(add_additional_clean_file FILENAME)
     get_directory_property(EXTRA_CLEAN_FILES ADDITIONAL_MAKE_CLEAN_FILES)
@@ -41,9 +45,9 @@ endif(NOT SOURCE_FILES)
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 
-if(NOT FREQ)
-    message(FATAL_ERROR "FREQ variable is not defined")
-endif(NOT FREQ)
+if(NOT F_CPU)
+    message(FATAL_ERROR "F_CPU variable is not defined")
+endif(NOT F_CPU)
 
 if(NOT PROGRAMMER)
     message(FATAL_ERROR "PROGRAMMER variable is not defined")
@@ -53,7 +57,7 @@ if(NOT MMCU)
     message(FATAL_ERROR "MMCU variable is not defined")
 endif(NOT MMCU)
 
-message(STATUS "Building ${PROJECT_NAME} for ${MMCU} with frequency ${FREQ}")
+message(STATUS "Building ${PROJECT_NAME} v${PROJECT_VERSION} for ${MMCU} with frequency ${F_CPU}")
 message(STATUS "Source files: ${SOURCE_FILES}")
 message(STATUS "Using flags: ${CMAKE_C_FLAGS}")
 
@@ -73,8 +77,8 @@ set_target_properties(
         ${PROJECT_NAME}
         PROPERTIES
         OUTPUT_NAME ${ELF_FILENAME}
-        COMPILE_FLAGS "-mmcu=${MMCU} -I. -gdwarf-2 ${BOOTSTART_FLAG} -DF_CPU=${FREQ}UL -Os -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums -Wall -Wno-unknown-pragmas -Wstrict-prototypes -Wundef -std=gnu99 -Wl,--gc-section"
-        LINK_FLAGS "-mmcu=${MMCU} -I. -gdwarf-2 -DF_CPU=${FREQ}UL -Os -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums -Wall -Wno-unknown-pragmas -Wstrict-prototypes -Wundef -std=gnu99 -Wundef -MD -MP -MF .dep/main.elf.d --output ${ELF_FILE} -Wl,-lc,--entry=main"
+        COMPILE_FLAGS "-mmcu=${MMCU} -I. -gdwarf-2 -Os -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums -Wall -Wno-unknown-pragmas -Wstrict-prototypes -Wundef -std=gnu99 -Wl,--gc-section"
+        LINK_FLAGS "-mmcu=${MMCU} -I. -gdwarf-2 -Os -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums -Wall -Wno-unknown-pragmas -Wstrict-prototypes -Wundef -std=gnu99 -Wundef -MD -MP -MF .dep/main.elf.d --output ${ELF_FILE} -Wl,-lc,--entry=main"
 )
 
 add_custom_command(

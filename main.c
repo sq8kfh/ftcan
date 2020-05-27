@@ -6,9 +6,11 @@
  * Copyright (C) 2014-2020 Kamil Palkowski. All rights reserved.
  */
 
+#include "config.h"
 #include <avr/io.h>
 #include <util/delay.h>
 #include <avr/interrupt.h>
+#include <stdio.h>
 
 #include "ft220x.h"
 #include "can.h"
@@ -230,7 +232,9 @@ void slcan_interpreter(char *command) {
     else if (command[0] == 'F') {	//Read Status Flags
         if (command[1] != '\r')
             goto error;
-        FT220X_write_s("F0\r");
+        char tmp[5];
+        sprintf(tmp, "F%02hhx\r", CANGSTA);
+        FT220X_write_s(tmp);
     }
 //	else if (command[0] == 'M') {	//Acceptance Mask Mxxxxxxxx
 //	}
@@ -239,12 +243,16 @@ void slcan_interpreter(char *command) {
     else if (command[0] == 'V') {	//HW/SW Version
         if (command[1] != '\r')
             goto error;
-        FT220X_write_s("V0101\r");
+        char tmp[9];
+        sprintf(tmp, "V01%02hhu\r", FTCAN_VERSION_MAJOR);
+        FT220X_write_s(tmp);
     }
     else if (command[0] == 'v') {	//Major/Minor Version
         if (command[1] != '\r')
             goto error;
-        FT220X_write_s("v0100\r");
+        char tmp[9];
+        sprintf(tmp, "v%02hhu%02hhu\r", FTCAN_VERSION_MAJOR, FTCAN_VERSION_MINOR);
+        FT220X_write_s(tmp);
     }
     else {
         goto error;

@@ -66,6 +66,7 @@ void FT220X_flush(void) {
     FT_CLK_1;
     asm ("nop");
     FT_CLK_0;
+    asm ("nop");
     FT_SS_DIS;
     sei();
 }

@@ -9,6 +9,7 @@
 #ifndef CAN_H_
 #define CAN_H_
 
+#include "config.h"
 #include <avr/io.h>
 #include <avr/interrupt.h>
 

@@ -9,6 +9,7 @@
 #ifndef FT220X_H_
 #define FT220X_H_
 
+#include "config.h"
 #include <avr/io.h>
 
 #define DDR_FT DDRB
