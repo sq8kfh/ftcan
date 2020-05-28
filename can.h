@@ -31,6 +31,6 @@ extern volatile uint8_t can_rx_buf_bottom;
 
 void CAN_init(uint8_t bitrate);
 void CAN_disable(void);
-void CAN_tx(can_buf_t *buf);
+uint8_t CAN_tx(can_buf_t *buf);
 
 #endif /* CAN_H_ */

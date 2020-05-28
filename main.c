@@ -79,8 +79,7 @@ uint8_t slcan_command_t(char *data)	{ //TX Frame Format SFF tiiilddddddddddddddd
         frame.data[i2] |= htoi(data[i+1]);
     }
 
-    CAN_tx(&frame);
-    return 1;
+    return CAN_tx(&frame);
 }
 
 uint8_t slcan_command_T(char *data)	{ //TX Frame Format EFF Tiiiiiiiildddddddd...
@@ -128,8 +127,7 @@ uint8_t slcan_command_T(char *data)	{ //TX Frame Format EFF Tiiiiiiiildddddddd..
         frame.data[i2] |= htoi(data[i+1]);
     }
 
-    CAN_tx(&frame);
-    return 1;
+    return CAN_tx(&frame);
 }
 
 uint8_t slcan_command_r(char *data)	{ //TX Frame Format RTR/SFF riiil
@@ -152,8 +150,7 @@ uint8_t slcan_command_r(char *data)	{ //TX Frame Format RTR/SFF riiil
         return 0;
     frame.cancdmob = dlc;
 
-    CAN_tx(&frame);
-    return 1;
+    return CAN_tx(&frame);
 }
 
 uint8_t slcan_command_R(char *data)	{ //TX Frame Format RTR/EFF Riiiiiiiil
@@ -196,8 +193,7 @@ uint8_t slcan_command_R(char *data)	{ //TX Frame Format RTR/EFF Riiiiiiiil
         return 0;
     frame.cancdmob = dlc | (1 << IDE);
 
-    CAN_tx(&frame);
-    return 1;
+    return CAN_tx(&frame);
 }
 
 void slcan_interpreter(char *command) {
@@ -287,7 +283,7 @@ int main(void) {
     CAN_RECV_DDR = (1 << CAN_RECV);
     CAN_RECV_PORT &= ~(1 << CAN_RECV);
     FT220X_init();
-    CAN_init(can_bitrate);
+    //CAN_init(can_bitrate);
     sei();
 
     FT220X_flush();

@@ -94,7 +94,8 @@ void CAN_disable(void) {
     CANGCON = (1 << SWRES);   // CAN reset
 }
 
-void CAN_tx(can_buf_t *buf) {
+uint8_t CAN_tx(can_buf_t *buf) {
+    if (!(CANGSTA & (1 << ENFG))) return 0; //bus disable
     while (1) {
         if (!(CANEN2 & ( 1 << ENMOB0 ))) {
             CANPAGE = 0 << MOBNB0;
@@ -108,14 +109,16 @@ void CAN_tx(can_buf_t *buf) {
 
     CANSTMOB = 0x00;       // Clear mob status register
 
-    CANIDT4 = buf->canidt4;      // Set can id to 0
-    CANIDT3 = buf->canidt3;      // ""
-    CANIDT2 = buf->canidt2;      // ""
-    CANIDT1 = buf->canidt1;      // ""
+    CANIDT4 = buf->canidt4;
+    CANIDT3 = buf->canidt3;
+    CANIDT2 = buf->canidt2;
+    CANIDT1 = buf->canidt1;
 
     for ( int8_t i = 0; i < 8; ++i ) {
-         CANMSG = buf->data[i];  // set message data for all 8 bytes to 55 (alternating 1s and 0s
-    } // for
+         CANMSG = buf->data[i];
+    }
 
     CANCDMOB = buf->cancdmob | ( 1 << CONMOB0 );    // Enable transmission
+
+    return 1;
 }
