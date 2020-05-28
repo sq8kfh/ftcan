@@ -12,6 +12,22 @@ can_buf_t can_rx_buf[CAN_RX_BUF_SIZE];
 volatile uint8_t can_rx_buf_top = 0;
 volatile uint8_t can_rx_buf_bottom = 0;
 
+#if F_CPU == 8000000UL
+static uint8_t can_bitrate_map[9][3] = {
+        {0x0e, 0x04, 0x13}, //S0 10Kbit //TODO: calculate
+        {0x0e, 0x04, 0x13}, //S1 20Kbit //TODO: calculate
+        {0x0e, 0x04, 0x13}, //S2 50Kbit //TODO: calculate
+        {0x12, 0x04, 0x13}, //S3 100Kbit
+        {0x0e, 0x04, 0x13}, //S4 125Kbit
+        {0x06, 0x04, 0x13}, //S5 250Kbit
+        {0x02, 0x04, 0x13}, //S6 500Kbit
+        {0x0e, 0x04, 0x13}, //S7 800Kbit //TODO: calculate
+        {0x00, 0x04, 0x12}, //S8 1Mbit
+};
+#else
+#error "Please specify F_CPU"
+#endif
+
 ISR(CAN_INT_vect) {
     uint8_t canhpmob = CANHPMOB;
     uint8_t cangit = CANGIT;
@@ -45,32 +61,20 @@ ISR(CAN_INT_vect) {
     CANGIT |= (cangit & 0x7f);
 }
 
-void CAN_init(void) {
+void CAN_init(uint8_t bitrate) {
     CANGCON = ( 1 << SWRES );   // CAN reset
     CANTCON = 0xff;             // CAN timing prescaler
 
     CANHPMOB = 0x00;			// preprograowanie 4 najmlodszych bitow dla CANPAGE = CANHPMOB;
 
-    #if F_CPU == 4000000UL
-        CANBT1 = 0x06;
-        CANBT2 = 0x04;
-        CANBT3 = 0x13;
-    #elif F_CPU == 8000000UL
-        CANBT1 = 0x0e;
-        CANBT2 = 0x04;
-        CANBT3 = 0x13;
-    #elif F_CPU == 16000000UL
-        CANBT1 = 0x1e;
-        CANBT2 = 0x04;
-        CANBT3 = 0x13;
-    #else
-        #error "Please specify F_CPU"
-    #endif
+    CANBT1 = can_bitrate_map[bitrate][0];
+    CANBT2 = can_bitrate_map[bitrate][1];
+    CANBT3 = can_bitrate_map[bitrate][2];
 
     for ( uint8_t mob=0; mob<6; mob++ ) {
-        CANPAGE = ( mob << MOBNB0);        // Selects Message Object 0-5
-        CANCDMOB = 0x00;             // Disable mob
-        CANSTMOB = 0x00;           // Clear mob status register;
+        CANPAGE = ( mob << MOBNB0);   // Selects Message Object 0-5
+        CANCDMOB = 0x00;              // Disable mob
+        CANSTMOB = 0x00;              // Clear mob status register;
     }
     for ( uint8_t mob=2; mob<6; mob++ ) {
         CANPAGE = mob << MOBNB0;
@@ -86,6 +90,10 @@ void CAN_init(void) {
     CANGCON = 1<<ENASTB;
 }
 
+void CAN_disable(void) {
+    CANGCON = (1 << SWRES);   // CAN reset
+}
+
 void CAN_tx(can_buf_t *buf) {
     while (1) {
         if (!(CANEN2 & ( 1 << ENMOB0 ))) {
@@ -97,20 +105,17 @@ void CAN_tx(can_buf_t *buf) {
             break;
         }
     }
-   //CANPAGE = 0 << MOBNB0;      // Select MOb0 for transmission
 
-   //while ( CANEN2 & ( 1 << ENMOB0 ) ); // Wait for MOb 0 to be free
+    CANSTMOB = 0x00;       // Clear mob status register
 
-   CANSTMOB = 0x00;       // Clear mob status register
+    CANIDT4 = buf->canidt4;      // Set can id to 0
+    CANIDT3 = buf->canidt3;      // ""
+    CANIDT2 = buf->canidt2;      // ""
+    CANIDT1 = buf->canidt1;      // ""
 
-   CANIDT4 = buf->canidt4;      // Set can id to 0
-   CANIDT3 = buf->canidt3;      // ""
-   CANIDT2 = buf->canidt2;      // ""
-   CANIDT1 = buf->canidt1;      // ""
+    for ( int8_t i = 0; i < 8; ++i ) {
+         CANMSG = buf->data[i];  // set message data for all 8 bytes to 55 (alternating 1s and 0s
+    } // for
 
-   for ( int8_t i = 0; i < 8; ++i ) {
-        CANMSG = buf->data[i];  // set message data for all 8 bytes to 55 (alternating 1s and 0s
-   } // for
-
-   CANCDMOB = buf->cancdmob | ( 1 << CONMOB0 );    // Enable transmission
+    CANCDMOB = buf->cancdmob | ( 1 << CONMOB0 );    // Enable transmission
 }

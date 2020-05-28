@@ -29,7 +29,8 @@ extern can_buf_t can_rx_buf[CAN_RX_BUF_SIZE];
 extern volatile uint8_t can_rx_buf_top;
 extern volatile uint8_t can_rx_buf_bottom;
 
-void CAN_init(void);
+void CAN_init(uint8_t bitrate);
+void CAN_disable(void);
 void CAN_tx(can_buf_t *buf);
 
 #endif /* CAN_H_ */

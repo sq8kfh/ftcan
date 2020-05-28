@@ -8,13 +8,18 @@ The FTCAN is compatible with the SLCAN (Serial Line CAN Protocol).
 
 | CMD | STATUS | SYNTAX              | DESCRIPTION                                        |
 |:---:|:------:|---------------------|----------------------------------------------------|
-|  S  |  TODO  | Sn[CR]              | Setup with standard CAN bit-rates where n is 0-8.  |
-|     |        |                     | S0 10Kbit          S4 125Kbit         S8 1Mbit     |
-|     |        |                     | S1 20Kbit          S5 250Kbit         S9 83.3Kbit  |
-|     |        |                     | S2 50Kbit          S6 500Kbit                      |
-|     |        |                     | S3 100Kbit         S7 800Kbit                      |
-|  O  |  TODO  | O[CR]               | Open the CAN channel                               |
-|  C  |  TODO  | C[CR]               | Close the CAN channel                              |
+|  S  |        | Sn[CR]              | Setup with standard CAN bit-rates where n is 0-8.  |
+|     |  TODO  |                     | S0 10Kbit                                          |
+|     |  TODO  |                     | S1 20Kbit                                          |
+|     |  TODO  |                     | S2 50Kbit                                          |
+|     |        |                     | S3 100Kbit                                         |
+|     |        |                     | S4 125Kbit  (default)                              |
+|     |        |                     | S5 250Kbit                                         |
+|     |        |                     | S6 500Kbit                                         |
+|     |  TODO  |                     | S7 800Kbit                                         |
+|     |        |                     | S8 1Mbit                                           |
+|  O  |        | O[CR]               | Open the CAN channel                               |
+|  C  |        | C[CR]               | Close the CAN channel                              |
 |  t  |        | tiiildd...[CR]      | Transmit a standard (11bit) CAN frame              |
 |  T  |        | Tiiiiiiiildd...[CR] | Transmit an extended (29bit) CAN frame             |
 |  r  |        | riiil[CR]           | Transmit an standard RTR (11bit) CAN frame         |

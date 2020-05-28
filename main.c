@@ -15,6 +15,12 @@
 #include "ft220x.h"
 #include "can.h"
 
+#define CAN_RECV_DDR DDRC
+#define CAN_RECV_PORT PORTC
+#define CAN_RECV PC0
+
+uint8_t can_bitrate = 4;
+
 char itoh(uint8_t i) {
     char h[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
     return h[i & 0x0F];
@@ -195,7 +201,7 @@ uint8_t slcan_command_R(char *data)	{ //TX Frame Format RTR/EFF Riiiiiiiil
 }
 
 void slcan_interpreter(char *command) {
-    if (command[0] == 'T') {	//TX Frame Format EFF Tiiiiiiiildddddddd...
+    if (command[0] == 'T') {	    //TX Frame Format EFF Tiiiiiiiildddddddd...
         if (slcan_command_T(command))
             FT220X_write('\r');
         else
@@ -219,22 +225,35 @@ void slcan_interpreter(char *command) {
         else
             goto error;
     }
-    else if (command[0] == 'O') {	//Open Channel
-        if (command[1] != '\r')
-            goto error;
-        FT220X_write('\r');
-    }
-    else if (command[0] == 'C') {	//Close Channel
-        if (command[1] != '\r')
-            goto error;
-        FT220X_write('\r');
-    }
     else if (command[0] == 'F') {	//Read Status Flags
         if (command[1] != '\r')
             goto error;
         char tmp[5];
         sprintf(tmp, "F%02hhx\r", CANGSTA);
         FT220X_write_s(tmp);
+    }
+    else if (command[0] == 'O') {	//Open Channel
+        if (command[1] != '\r')
+            goto error;
+        CAN_init(can_bitrate);
+        FT220X_write('\r');
+    }
+    else if (command[0] == 'C') {	//Close Channel
+        if (command[1] != '\r')
+            goto error;
+        CAN_disable();
+        FT220X_write('\r');
+    }
+    else if (command[0] == 'S') {	//Set bitrate
+        if (command[2] != '\r')
+            goto error;
+        if ('0' <= command[1] && command[1] <= '8') {
+            can_bitrate = ((uint8_t) (command[1] - '0') & 0x0Fu);
+            FT220X_write('\r');
+        }
+        else {
+            goto error;
+        }
     }
 //	else if (command[0] == 'M') {	//Acceptance Mask Mxxxxxxxx
 //	}
@@ -265,37 +284,42 @@ void slcan_interpreter(char *command) {
 }
 
 int main(void) {
-    DDRC = (1<<PC0);
-    PORTC &= ~(1<<PC0);
+    CAN_RECV_DDR = (1 << CAN_RECV);
+    CAN_RECV_PORT &= ~(1 << CAN_RECV);
     FT220X_init();
-    CAN_init();
+    CAN_init(can_bitrate);
     sei();
 
     FT220X_flush();
 
-    uint8_t read_idx = 0;
-    uint8_t led = 0;
-    while (1) {
-//		if (led == 0) {
-//			PORTC ^= (1<<PC0); //led toggle
-//		}
-//		++led;
+    uint16_t led_counter = 0;
 
-        char s[51];
-        PORTC |= (1<<PC0);
-        read_idx += FT220X_read_line(&s[read_idx],50-read_idx);
-        PORTC &= ~(1<<PC0);
-        if (s[read_idx-1] == '\r') {
-            s[read_idx] = '\0';
+    uint8_t read_idx = 0;
+    char read_buf[51];
+    while (1) {
+		if (led_counter > 100) {
+            CAN_RECV_PORT |= (1 << CAN_RECV);
+		}
+		else {
+		    ++led_counter;
+		}
+
+        read_idx += FT220X_read_line(&read_buf[read_idx],50-read_idx);
+
+        if (read_buf[read_idx-1] == '\r') {
+            read_buf[read_idx] = '\0';
             read_idx=0;
-            slcan_interpreter(s);
+            slcan_interpreter(read_buf);
         }
-        else if (read_idx > 50) {
+        else if (read_idx >= 50) {
             read_idx=0;
             FT220X_write('\b');
         }
 
         if (can_rx_buf_top != can_rx_buf_bottom) {
+            CAN_RECV_PORT &= ~(1 << CAN_RECV);
+            led_counter = 0;
+
             char buf[30];
             uint8_t i, dlc;
             if (can_rx_buf[can_rx_buf_bottom].cancdmob & (1 << IDE)) {	//29-bits

@@ -24,9 +24,9 @@
 #define SS_FT PB6
 #define CLK_FT PB7
 
-#define FLUSH_REQ 0x11
-#define READ_REQ 0x03
-#define WRITE_REQ 0x01
+#define WRITE_REQ 0x00
+#define READ_REQ 0x02
+#define FLUSH_REQ 0x10
 
 void FT220X_init(void);
 void FT220X_flush(void);
