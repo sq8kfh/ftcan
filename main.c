@@ -292,6 +292,7 @@ int main(void) {
 
     uint8_t read_idx = 0;
     char read_buf[51];
+    uint8_t send_bell = 0;
     while (1) {
 		if (led_counter > 100) {
             CAN_RECV_PORT |= (1 << CAN_RECV);
@@ -309,9 +310,13 @@ int main(void) {
         }
         else if (read_idx >= 50) {
             read_idx=0;
-            FT220X_write('\b');
+            FT220X_write('\a');
         }
 
+        if (send_bell) {
+            FT220X_write('\a');
+            send_bell=0;
+        }
         if (can_rx_buf_top != can_rx_buf_bottom) {
             CAN_RECV_PORT &= ~(1 << CAN_RECV);
             led_counter = 0;
@@ -355,7 +360,7 @@ int main(void) {
             }
             buf[i++] = '\r';
             buf[i++] = '\0';
-            FT220X_write_s(buf);
+            send_bell = FT220X_write_s(buf); // == 1 -> fail
             can_rx_buf_bottom = (uint8_t)((can_rx_buf_bottom + 1) & CAN_RX_BUF_INDEX_MASK);
         }
     }

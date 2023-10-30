@@ -129,7 +129,8 @@ void FT220X_write(uint8_t data) {
     sei();
 }
 
-void FT220X_write_s(char *data) {
+uint8_t FT220X_write_s(char *data) {
+    uint8_t err = 0;
     cli();
     FT_SS_EN;
 
@@ -140,12 +141,20 @@ void FT220X_write_s(char *data) {
     FT_CLK_1;
     asm ("nop");
     FT_CLK_0;
-    //uint8_t txe = (PIN_FT & (1<<MISO_FT)) >> MISO_FT;
-
-    for (;*data != 0; ++data)
-        spi_write((uint8_t)(*data));
-
+    uint8_t txe = (PIN_FT & (1<<MISO_FT)) >> MISO_FT;
+    if (!txe) {
+        for (; *data != 0; ++data) {
+            if (!spi_write((uint8_t) (*data))) {
+                err = 1;
+                break;
+            }
+        }
+    }
+    else {
+        err = 1;
+    }
     set_miosi_as_input();
     FT_SS_DIS;
     sei();
+    return err;
 }

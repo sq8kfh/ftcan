@@ -12,6 +12,10 @@ can_buf_t can_rx_buf[CAN_RX_BUF_SIZE];
 volatile uint8_t can_rx_buf_top = 0;
 volatile uint8_t can_rx_buf_bottom = 0;
 
+can_buf_t can_tx_buf[CAN_TX_BUF_SIZE];
+volatile uint8_t can_tx_buf_top = 0;
+volatile uint8_t can_tx_buf_bottom = 0;
+
 #if F_CPU == 8000000UL
 static uint8_t can_bitrate_map[9][3] = {
         {0x0e, 0x04, 0x13}, //S0 10Kbit //TODO: calculate
@@ -35,16 +39,18 @@ ISR(CAN_INT_vect) {
         uint8_t savecanpage = CANPAGE;
         CANPAGE = canhpmob;
         if (CANSTMOB & (1 << RXOK)) {
-            can_rx_buf[can_rx_buf_top].canidt1 = CANIDT1;
-            can_rx_buf[can_rx_buf_top].canidt2 = CANIDT2;
-            can_rx_buf[can_rx_buf_top].canidt3 = CANIDT3;
-            can_rx_buf[can_rx_buf_top].canidt4 = CANIDT4;
-            can_rx_buf[can_rx_buf_top].cancdmob = CANCDMOB & 0x1f;
-            for (uint8_t i = 0; i < 8; ++i) {
-                can_rx_buf[can_rx_buf_top].data[i] = CANMSG;
+            uint8_t next_rx_top = (uint8_t)((can_rx_buf_top + 1) & CAN_RX_BUF_INDEX_MASK);
+            if (next_rx_top != can_rx_buf_bottom) { //else drop frame
+                can_rx_buf[can_rx_buf_top].canidt1 = CANIDT1;
+                can_rx_buf[can_rx_buf_top].canidt2 = CANIDT2;
+                can_rx_buf[can_rx_buf_top].canidt3 = CANIDT3;
+                can_rx_buf[can_rx_buf_top].canidt4 = CANIDT4;
+                can_rx_buf[can_rx_buf_top].cancdmob = CANCDMOB & 0x1f;
+                for (uint8_t i = 0; i < 8; ++i) {
+                    can_rx_buf[can_rx_buf_top].data[i] = CANMSG;
+                }
+                can_rx_buf_top = next_rx_top;
             }
-            can_rx_buf_top = (uint8_t)((can_rx_buf_top + 1) & CAN_RX_BUF_INDEX_MASK);
-
             CANIDM1 = 0;
             CANIDM2 = 0;
             CANIDM3 = 0;
@@ -53,6 +59,21 @@ ISR(CAN_INT_vect) {
         }
         else if (CANSTMOB & (1 << TXOK)) {
             CANCDMOB = 0; //disable mob
+            if (can_tx_buf_bottom != can_tx_buf_top) {
+                CANSTMOB = 0x00;       // Clear mob status register
+
+                CANIDT4 = can_tx_buf[can_tx_buf_bottom].canidt4;
+                CANIDT3 = can_tx_buf[can_tx_buf_bottom].canidt3;
+                CANIDT2 = can_tx_buf[can_tx_buf_bottom].canidt2;
+                CANIDT1 = can_tx_buf[can_tx_buf_bottom].canidt1;
+
+                for ( int8_t i = 0; i < 8; ++i ) {
+                    CANMSG = can_tx_buf[can_tx_buf_bottom].data[i];
+                }
+
+                CANCDMOB = can_tx_buf[can_tx_buf_bottom].cancdmob | ( 1 << CONMOB0 );    // Enable transmission
+                can_tx_buf_bottom = (uint8_t)((can_tx_buf_bottom + 1u) & CAN_TX_BUF_INDEX_MASK);
+            }
         }
         CANSTMOB = 0x00;  // Reset reason on selected channel
         CANPAGE = savecanpage;
@@ -96,17 +117,24 @@ void CAN_disable(void) {
 
 uint8_t CAN_tx(can_buf_t *buf) {
     if (!(CANGSTA & (1 << ENFG))) return 0; //bus disable
-    while (1) {
+    //while (1) {
         if (!(CANEN2 & ( 1 << ENMOB0 ))) {
             CANPAGE = 0 << MOBNB0;
-            break;
+            //break;
         }
-        if (!(CANEN2 & ( 1 << ENMOB1 ))) {
+        else if (!(CANEN2 & ( 1 << ENMOB1 ))) {
             CANPAGE = 1 << MOBNB0;
-            break;
+            //break;
         }
+    //}
+    else {
+        uint8_t next_top = (uint8_t)((can_tx_buf_top + 1u) & CAN_TX_BUF_INDEX_MASK);
+        if (next_top == can_tx_buf_bottom) return 0; //drop
+        //while(next_top == can_tx_buf_bottom); //tx buf full
+        can_tx_buf[can_tx_buf_top] = *buf;
+        can_tx_buf_top = next_top;
+        return 1;
     }
-
     CANSTMOB = 0x00;       // Clear mob status register
 
     CANIDT4 = buf->canidt4;

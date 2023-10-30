@@ -32,6 +32,6 @@ void FT220X_init(void);
 void FT220X_flush(void);
 uint8_t FT220X_read_line(char *buf, uint8_t len);
 void FT220X_write(uint8_t data);
-void FT220X_write_s(char *data);
+uint8_t FT220X_write_s(char *data);
 
 #endif /* FT220X_H_ */
